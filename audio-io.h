@@ -2,7 +2,7 @@
 #define AUDIO_IO_H
 
 #define HEADER_LENGTH 44
-#define AUDIO_FILE "./rise.wav"
+#define AUDIO_FILE "./sourcebbt.wav"
 
 typedef struct {
     int32_t  ChunkID;
@@ -25,7 +25,9 @@ typedef struct {
     int valid;
     FILE *file;
     WAVFILE_HEADER header;
-    
+    unsigned char* buffer;
+    int buffer_len ;
+    int max_buffer_pos; 
 
 } WAVFILE ;
 
@@ -34,7 +36,7 @@ typedef struct {
 
 int OpenWavFile(char *filename, WAVFILE *wavFile);
 int CloseWavFile(WAVFILE *wavFile);
-kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead);
+kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int windowSize);
 
 
 #endif

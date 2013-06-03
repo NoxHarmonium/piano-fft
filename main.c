@@ -204,7 +204,7 @@ void HeartBeat()
 
     samplesRead = 0;
     kiss_fft_cfg cfg;
-    kiss_fft_cpx *in = LoadSamples(&audioFile, ms, &samplesRead);
+    kiss_fft_cpx *in = LoadSamples(&audioFile, ms, &samplesRead,16384);
     
     totalSamplesRead += samplesRead;
     iterations++;    
