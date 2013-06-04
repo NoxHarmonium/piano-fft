@@ -31,4 +31,4 @@ clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ $(SDIR)/*.orig    
     
 style:
-	astyle --style=ansi -C -S -N -f  -p -H -k3 -W1 -j -c -v src/*.c
+	astyle --style=ansi -C -S -N -f  -p -H -k1 -W1 -j -c -v src/*.c

@@ -11,7 +11,8 @@
 #include "piano-fft.h"
 #include "utils.h"
 
-const float pFreqTable[52] = {
+const float pFreqTable[52] =
+{
     27.5,
     30.8677,
     32.7032,
@@ -70,7 +71,8 @@ kiss_fft_scalar magnitudes[52];
 
 RECT getKeyboardRect()
 {
-    RECT r = {
+    RECT r =
+    {
         KEYBOARD_XOFFSET,
         KEYBOARD_YOFFSET,
         KEYBOARD_XOFFSET + KEYBOARD_WIDTH,
@@ -82,7 +84,8 @@ RECT getKeyboardRect()
 RECT getKeyRect(int keyIndex)
 {
     int left = KEYBOARD_XOFFSET + (keyIndex * KEY_WIDTH);
-    RECT r = {
+    RECT r =
+    {
         left,
         KEYBOARD_YOFFSET,
         left + KEY_WIDTH,
@@ -104,13 +107,14 @@ HBRUSH createBrush(int r, int g, int b)
     return brush;
 }
 
-HBRUSH getKeyBrush(FFT_RESULT *result, int keyIndex)
+HBRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
 {
     float r = 0;
     float g = 0;
     float b = 0;
 
-    if (result->wavFile == NULL) {
+    if (result->wavFile == NULL)
+    {
         return createBrush((int)r, (int)g, (int)b);
     }
 
@@ -122,7 +126,8 @@ HBRUSH getKeyBrush(FFT_RESULT *result, int keyIndex)
     int binIndex = (int) round(f / fPerBin);
     int maxBinIndex = (samples / 2) + 1;
 
-    if (binIndex > maxBinIndex || binIndex == 0) {
+    if (binIndex > maxBinIndex || binIndex == 0)
+    {
         return createBrush((int)r, (int)g, (int)b);
     }
 
@@ -138,17 +143,20 @@ HBRUSH getKeyBrush(FFT_RESULT *result, int keyIndex)
 }
 
 
-FFT_RESULT PerformFFT(kiss_fft_cpx *in, kiss_fft_cpx *out, int samplesRead)
+FFT_RESULT PerformFFT(kiss_fft_cpx* in, kiss_fft_cpx* out, int samplesRead)
 {
     kiss_fft_cfg cfg;
 
-    if (samplesRead > 0) {
+    if (samplesRead > 0)
+    {
         /* printf("Samples Read: %i \n", samplesRead);  */
-        if ((cfg = kiss_fft_alloc(samplesRead, 0/*is_inverse_fft*/, NULL, NULL)) != NULL) {
-            size_t i;
+        if ((cfg = kiss_fft_alloc(samplesRead, 0/*is_inverse_fft*/, NULL, NULL)) != NULL)
+        {
             kiss_fft(cfg, in, out);
             free(cfg);
-        } else {
+        }
+        else
+        {
             printf("Cannot set up kissFFT.\n");
             exit(EXIT_FAILURE);
         }

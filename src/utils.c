@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <windows.h>
+#include <math.h>
 
 #include "config.h"
 #include "utils.h"
@@ -12,21 +13,25 @@ long long milliseconds_now()
     LARGE_INTEGER s_frequency;
     BOOL s_use_qpc = QueryPerformanceFrequency(&s_frequency);
 
-    if (s_use_qpc) {
+    if (s_use_qpc)
+    {
         LARGE_INTEGER now;
         QueryPerformanceCounter(&now);
         return (1000LL * now.QuadPart) / s_frequency.QuadPart;
-    } else {
+    }
+    else
+    {
         return GetTickCount();
     }
 }
 
-void HSVtoRGB( float *r, float *g, float *b, float h, float s, float v )
+void HSVtoRGB( float* r, float* g, float* b, float h, float s, float v )
 {
     int i;
     float f, p, q, t;
 
-    if ( s == 0 ) {
+    if ( s == 0 )
+    {
         /* achromatic (grey)  */
         *r = *g = *b = v;
         return;
@@ -39,7 +44,8 @@ void HSVtoRGB( float *r, float *g, float *b, float h, float s, float v )
     q = v * ( 1 - s * f );
     t = v * ( 1 - s * ( 1 - f ) );
 
-    switch ( i ) {
+    switch ( i )
+    {
         case 0:
             *r = v;
             *g = t;
@@ -76,4 +82,25 @@ void HSVtoRGB( float *r, float *g, float *b, float h, float s, float v )
             *b = q;
             break;
     }
+}
+
+char* WCharToChar(LPWSTR wideStr)
+{
+    char* trimmedString, *buffer;
+    int bufferSize = 512;
+    buffer = malloc(bufferSize);
+    int len = wcstombs(buffer, wideStr, bufferSize);
+    if (len == bufferSize)
+    {
+        buffer[bufferSize-1] = '\0';
+    }
+   
+    trimmedString = malloc(len);
+    strcpy(trimmedString,buffer);
+    
+ 
+    
+    free(buffer);
+    
+    return trimmedString;
 }

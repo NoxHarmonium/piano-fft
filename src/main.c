@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <windows.h>
+#include <shellapi.h>
 #include "dd.h"
 
 #include "config.h"
@@ -31,14 +32,23 @@ HINSTANCE g_hInstance;
 bool      g_bRunning;
 
 
+void printUsage()
+{
+    printf("Usage: piano-fft.exe <filename>\n");
+
+
+}
+
 LRESULT CALLBACK WndProc(
     HWND   hWnd,
     UINT   msg,
     WPARAM wParam,
     LPARAM lParam )
 {
-    switch ( msg ) {
-        case WM_PAINT: {
+    switch ( msg )
+    {
+        case WM_PAINT:
+        {
             /* Let Windows know we've redrawn the Window - since we've bypassed
                the GDI, Windows can't figure that out by itself. */
             ValidateRect( hWnd, NULL );
@@ -57,20 +67,26 @@ LRESULT CALLBACK WndProc(
     return 0;
 }
 
-WAVFILE setupAudio(char *filename)
+WAVFILE setupAudio(char* filename)
 {
-    if (!OpenWavFile(filename, &audioFile)) {
+    if (!OpenWavFile(filename, &audioFile))
+    {
         printf("Audio file opened successfully.\r\n");
-    } else {
+    }
+    else
+    {
         printf("Error opening audio file.\r\n");
         exit(EXIT_FAILURE);
     }
+
     return audioFile;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow)
 {
+    int nArgs;
+    char* filename;
     WNDCLASSEX wce;
     wce.cbSize        = sizeof(wce);
     wce.style         = CS_VREDRAW | CS_HREDRAW;
@@ -85,8 +101,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     wce.lpszClassName = "ADPWinClass",
         wce.hIconSm       = 0;
 
-    if (!RegisterClassEx(&wce)) {
-        return 0;
+    LPWSTR* szArgList = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+   
+
+    if (nArgs > 1)
+    {
+        filename = WCharToChar(szArgList[1]);         
+    }
+    else
+    {
+        printUsage();
+        return EXIT_FAILURE;
+    }
+
+
+    if ( NULL == szArgList )
+    {
+        printf("CommandLineToArgvW failed\n");
+        return EXIT_FAILURE;
+    }
+
+    if (!RegisterClassEx(&wce))
+    {
+        return EXIT_FAILURE;
     }
 
     HWND hWnd = CreateWindowEx(
@@ -105,19 +142,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                 );
 
     /* Initialize DirectDraw */
-    if (!DDInit( hWnd )) {
+    if (!DDInit( hWnd ))
+    {
         MessageBox( hWnd, "Failed to initialize DirectDraw", "Error", MB_OK );
         return 0;
     }
 
     /* Create DirectDraw surfaces */
-    if (!DDCreateSurfaces( false )) {
+    if (!DDCreateSurfaces( false ))
+    {
         MessageBox( hWnd, "Failed to create surfaces", "Error", MB_OK );
         return 0;
     }
 
     ShowWindow( hWnd, nCmdShow );
-    setupAudio(AUDIO_FILE);
+    setupAudio(filename);
     lastFFTTime = milliseconds_now();
     lastLogTime = milliseconds_now();
     MSG msg;
@@ -126,65 +165,78 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     InvalidateRect( hWnd, NULL, TRUE );
     g_bRunning = true;
 
-    while (g_bRunning) {
-        while (PeekMessage(&msg, hWnd, 0, 0, PM_NOREMOVE)) {
+    while (g_bRunning)
+    {
+        while (PeekMessage(&msg, hWnd, 0, 0, PM_NOREMOVE))
+        {
             BOOL bGetResult = GetMessage(&msg, NULL, 0, 0);
             TranslateMessage(&msg);
             DispatchMessage(&msg);
 
-            if (bGetResult == 0) {
+            if (bGetResult == 0)
+            {
                 g_bRunning = false;
             }
         }
 
-        if (g_bRunning) {
+        if (g_bRunning)
+        {
             CheckSurfaces();
             HeartBeat();
         }
     }
 
-    while ((r = GetMessage(&msg, NULL, 0, 0 )) != 0) {
-        if (r == -1) {
+    while ((r = GetMessage(&msg, NULL, 0, 0 )) != 0)
+    {
+        if (r == -1)
+        {
             ;  // Error!
-        } else {
+        }
+        else
+        {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
     }
 
     CloseWavFile(&audioFile);
+    LocalFree(szArgList);
+    free(filename);
     /* The application's return value  */
     return msg.wParam;
 }
 
 void HeartBeat()
 {
-    int i;  
+    int i;
     int ms = (int) milliseconds_now() - lastFFTTime;
 
-    if (ms < 33) {
+    if (ms < 33)
+    {
         return;
     }
 
     lastFFTTime = milliseconds_now();
 
-    if (fftResult.bins != NULL) {
+    if (fftResult.bins != NULL)
+    {
         free(fftResult.bins);
         fftResult.bins = NULL;
     }
 
-    samplesRead = 0;    
-    kiss_fft_cpx *in = LoadSamples(&audioFile, ms, &samplesRead, 16384);
+    samplesRead = 0;
+    kiss_fft_cpx* in = LoadSamples(&audioFile, ms, &samplesRead, 16384);
     totalSamplesRead += samplesRead;
-    iterations++;  
-     
-    kiss_fft_cpx *result = malloc(samplesRead * sizeof(kiss_fft_cpx));
+    iterations++;
+
+    kiss_fft_cpx* result = malloc(samplesRead * sizeof(kiss_fft_cpx));
     fftResult = PerformFFT(in, result, samplesRead);
     fftResult.wavFile = &audioFile;
     free(in);
     ms = (int) milliseconds_now() - lastLogTime;
 
-    if (ms > 1000) {
+    if (ms > 1000)
+    {
         lastLogTime = milliseconds_now();
         float avBins = (totalSamplesRead / (float) iterations) / 2.0;
         float nyquist = audioFile.header.SampleRate / 2.0;
@@ -211,7 +263,8 @@ void HeartBeat()
         );
     FrameRect(hDC, &r, frameBrush);
 
-    for (i = 0; i < KEY_COUNT; i++) {
+    for (i = 0; i < KEY_COUNT; i++)
+    {
         RECT r2 = getKeyRect(i);
         HBRUSH b = getKeyBrush(&fftResult, i);
         FillRect(hDC, &r2, b);
