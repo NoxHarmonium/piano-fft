@@ -7,7 +7,7 @@
 
 #include "kiss_fft.h"
 #include "audio-io.h"
-#include "fft-leds.h"
+#include "piano-fft.h"
 #include "utils.h"
 
 const float pFreqTable[52] = {
