@@ -36,20 +36,17 @@ LRESULT CALLBACK WndProc(
     WPARAM wParam,
     LPARAM lParam )
 {
-
-    switch ( msg ) {       
-
-        case WM_PAINT: {                  
-        // Let Windows know we've redrawn the Window - since we've bypassed
-        // the GDI, Windows can't figure that out by itself.
-        ValidateRect( hWnd, NULL );
+    switch ( msg ) {
+        case WM_PAINT: {
+            // Let Windows know we've redrawn the Window - since we've bypassed
+            // the GDI, Windows can't figure that out by itself.
+            ValidateRect( hWnd, NULL );
         }
         break;
 
-        case WM_DESTROY:            
+        case WM_DESTROY:
             g_bRunning = false;
             PostQuitMessage(0);
-            
             break;
 
         default:
@@ -61,24 +58,18 @@ LRESULT CALLBACK WndProc(
 
 WAVFILE setupAudio(char *filename)
 {
-
     if (!OpenWavFile(filename, &audioFile)) {
         printf("Audio file opened successfully.\r\n");
     } else {
         printf("Error opening audio file.\r\n");
         exit(EXIT_FAILURE);
     }
-
-
-
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow)
 {
-
     WNDCLASSEX wce;
-
     wce.cbSize        = sizeof(wce);
     wce.style         = CS_VREDRAW | CS_HREDRAW;
     wce.lpfnWndProc   = (WNDPROC) WndProc;
@@ -111,52 +102,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     NULL            // Pointer to window specific data
                 );
 
-     
     // Initialize DirectDraw
-	if (!DDInit( hWnd ))
-	{
-		MessageBox( hWnd, "Failed to initialize DirectDraw", "Error", MB_OK );
-		return 0;
-	}
-    
+    if (!DDInit( hWnd )) {
+        MessageBox( hWnd, "Failed to initialize DirectDraw", "Error", MB_OK );
+        return 0;
+    }
+
     // Create DirectDraw surfaces
-	if (!DDCreateSurfaces( false ))
-	{
-		MessageBox( hWnd, "Failed to create surfaces", "Error", MB_OK );
-		return 0;
-	}
+    if (!DDCreateSurfaces( false )) {
+        MessageBox( hWnd, "Failed to create surfaces", "Error", MB_OK );
+        return 0;
+    }
 
     ShowWindow( hWnd, nCmdShow );
-
     setupAudio(AUDIO_FILE);
     lastFFTTime = milliseconds_now();
     lastLogTime = milliseconds_now();
-
     MSG msg;
     int r;
-    
     // Invalidate window area so that it gets redrawn first time round
-	InvalidateRect( hWnd, NULL, TRUE );
-
+    InvalidateRect( hWnd, NULL, TRUE );
     g_bRunning = true;
-	while (g_bRunning)
-	{
-		while (PeekMessage(&msg, hWnd, 0, 0, PM_NOREMOVE))
-		{
-			BOOL bGetResult = GetMessage(&msg, NULL, 0, 0);
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-			if (bGetResult==0)
-				g_bRunning = false;
-		}
-		if (g_bRunning)
-		{
-			CheckSurfaces();
-			HeartBeat();
-		}
-	}
-    
-    
+
+    while (g_bRunning) {
+        while (PeekMessage(&msg, hWnd, 0, 0, PM_NOREMOVE)) {
+            BOOL bGetResult = GetMessage(&msg, NULL, 0, 0);
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+
+            if (bGetResult == 0) {
+                g_bRunning = false;
+            }
+        }
+
+        if (g_bRunning) {
+            CheckSurfaces();
+            HeartBeat();
+        }
+    }
+
     while ((r = GetMessage(&msg, NULL, 0, 0 )) != 0) {
         if (r == -1) {
             ;  // Error!
@@ -167,88 +151,56 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
     CloseWavFile(&audioFile);
-
     // The application's return value
     return msg.wParam;
 }
 
 void HeartBeat()
 {
-	
     int i;
     double random_number = rand() / (double)RAND_MAX;
-
-    
-    
-        
-    
-   
     int ms = (int) milliseconds_now() - lastFFTTime;
-      
-    
-    if (ms < 33)
+
+    if (ms < 33) {
         return;
-        
+    }
+
     lastFFTTime = milliseconds_now();
-    
-    
-    
-    
-    
-    
+
     if (fftResult.bins != NULL) {
         free(fftResult.bins);
         fftResult.bins = NULL;
     }
-    
 
     samplesRead = 0;
     kiss_fft_cfg cfg;
-    kiss_fft_cpx *in = LoadSamples(&audioFile, ms, &samplesRead,16384);
-    
+    kiss_fft_cpx *in = LoadSamples(&audioFile, ms, &samplesRead, 16384);
     totalSamplesRead += samplesRead;
-    iterations++;    
-    
+    iterations++;
     //printf("Time between frame %i ms, sr: %i ", ms, samplesRead);
     kiss_fft_cpx *result = malloc(samplesRead * sizeof(kiss_fft_cpx));
-
     fftResult = PerformFFT(in, result, samplesRead);
     fftResult.wavFile = &audioFile;
-    
     free(in);
-    
     ms = (int) milliseconds_now() - lastLogTime;
-    
-    if (ms > 1000)
-    {
+
+    if (ms > 1000) {
         lastLogTime = milliseconds_now();
         float avBins = (totalSamplesRead / (float) iterations) / 2.0;
         float nyquist = audioFile.header.SampleRate / 2.0;
         float binres = nyquist / avBins;
-        
-        printf("Log (1000ms) av bins: %f, nyquist: %f hz, bin res: %f \n", avBins,nyquist, binres );
+        printf("Log (1000ms) av bins: %f, nyquist: %f hz, bin res: %f \n", avBins, nyquist, binres );
         iterations = 0;
         totalSamplesRead = 0;
     }
-    
-    
-
 
     // Check for lost surfaces
-	CheckSurfaces();
-	
-	// Clear the back buffer
-	DDClear( g_pDDSBack, 0, 0, 320, 240 );
-	
-    
-    
-    
+    CheckSurfaces();
+    // Clear the back buffer
+    DDClear( g_pDDSBack, 0, 0, 320, 240 );
     HDC hDC;
-    
     IDirectDrawSurface_GetDC(g_pDDSBack, &hDC);
-
     RECT r = getKeyboardRect();
-
     HBRUSH frameBrush =
         CreateSolidBrush(
             RGB(
@@ -257,9 +209,6 @@ void HeartBeat()
                 0
             )
         );
-
-
-
     FrameRect(hDC, &r, frameBrush);
 
     for (i = 0; i < KEY_COUNT; i++) {
@@ -271,10 +220,7 @@ void HeartBeat()
     }
 
     DeleteObject(frameBrush);
-    
-    
     IDirectDrawSurface_ReleaseDC(g_pDDSBack, hDC);
-	
-	// Blit the back buffer to the front buffer
-	DDFlip();
+    // Blit the back buffer to the front buffer
+    DDFlip();
 }

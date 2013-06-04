@@ -12,10 +12,8 @@
 int OpenWavFile(char *filename, WAVFILE *wavFile)
 {
     printf("Attempting to open: '%s'\r\n", filename);
-
     //WAVFILE _wavFile = *wavFile;
     wavFile->valid = 0;
-
     wavFile->file = fopen(filename, "r");
 
     if (wavFile->file == NULL) {
@@ -24,7 +22,6 @@ int OpenWavFile(char *filename, WAVFILE *wavFile)
     }
 
     WAVFILE_HEADER header;
-
     // Read in header data.
     size_t length = fread(&header, sizeof(header), 1, wavFile->file);
 
@@ -49,28 +46,21 @@ int OpenWavFile(char *filename, WAVFILE *wavFile)
     }
 
     wavFile->header = header;
-
     printf("Sample rate: %i, NumChannels: %i, BitsPerSample: %i\r\n", wavFile->header.SampleRate, wavFile->header.NumChannels, wavFile->header.BitsPerSample);
-
     wavFile->valid = 1;
-
     // Basic sanity checks passed. Continue.
     fseek(wavFile->file, HEADER_LENGTH, SEEK_SET);
-    
     wavFile->buffer = malloc(wavFile->header.Subchunk2Size);
     wavFile->buffer_len = wavFile->header.Subchunk2Size;
     wavFile->max_buffer_pos = wavFile->buffer + wavFile->buffer_len;
     int bytesRead;
-    unsigned char* buffer_ptr = wavFile->buffer;
-    
-    
-    do 
-    {
+    unsigned char *buffer_ptr = wavFile->buffer;
+
+    do {
         bytesRead = fread(buffer_ptr, sizeof(unsigned char), 1024, wavFile->file);
         buffer_ptr += bytesRead;
     } while (bytesRead > 0);
-        
-    
+
     printf("WAV file opened successfully.\r\n");
     return 0;
 }
@@ -80,77 +70,53 @@ kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int wi
     int i = 0;
     int bytesRead = 0;
     int _samplesRead = 0;
-    
-
     int samples = wavFile->header.SampleRate * ((double)millis / 1000.0);
-    
-        
     int kissSamples = kiss_fft_next_fast_size(windowSize);
     int bytesPerSample = wavFile->header.BitsPerSample / 8;
-    
-    wavFile->buffer += samples * bytesPerSample;    
-    
-    if (wavFile->buffer > wavFile->max_buffer_pos)
-    {
-        printf("buffer (%x) > buffer length (%x) !\n",wavFile->buffer,wavFile->max_buffer_pos);
+    wavFile->buffer += samples * bytesPerSample;
+
+    if (wavFile->buffer > wavFile->max_buffer_pos) {
+        printf("buffer (%x) > buffer length (%x) !\n", wavFile->buffer, wavFile->max_buffer_pos);
         exit(1); // EOB
     }
-    
+
     kiss_fft_cpx *values = malloc(kissSamples * sizeof(kiss_fft_cpx));
     //unsigned char *buffer = malloc(bytesPerSample * sizeof(unsigned char) * samples);
-
     //printf("Samples: %i, bytesPerSample: %i, sizeof(kiss_fft_cpx): %i\r\n", samples, bytesPerSample, sizeof(kiss_fft_cpx));
-
     int maxValue = 0;
 
     for (i = 0; i < bytesPerSample; i++) {
         maxValue |= 0xFF << i * 8;
     }
 
-
-
     //printf("maxValue: %i \r\n", maxValue);
-
     bytesRead = windowSize; //fread(buffer, sizeof(unsigned char), bytesPerSample * samples, wavFile->file);
 
     //printf("bytesRead: %i\r\n", bytesRead);
 
     if (bytesRead == 0) {
-
         return NULL;
     }
 
-
-
     i = 0;
-    unsigned char* buffer_pos = wavFile->buffer;
+    unsigned char *buffer_pos = wavFile->buffer;
 
     while (i < kissSamples) {
         int j;
         int sample = 0;
         unsigned char *converter = calloc(sizeof(int), 1);
 
-
-
-
         for (j = 0; j < bytesPerSample; j++) {
             converter[j] = buffer_pos[i + j];
         }
 
         sample = *((int *)converter);
-
         //printf("%x,",sample);
-
-
         kiss_fft_cpx s;
         s.r = ((kiss_fft_scalar)sample) / (kiss_fft_scalar) maxValue;
-
         //printf("%x = %f,",sample,s.r);
-
         assert(s.r <= 1.0);
-
         s.i = 0;
-
         i += bytesPerSample;
 
         if (_samplesRead > kissSamples) {
@@ -159,20 +125,16 @@ kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int wi
         }
 
         values[_samplesRead++] = s;
-
-        
-
         free(converter);
     }
 
     kiss_fft_cpx empty;
-    for (i = _samplesRead; i < kissSamples; i++)
-    {
+
+    for (i = _samplesRead; i < kissSamples; i++) {
         values[i] = empty;
     }
 
     *samplesRead = kissSamples;
-
     //free(buffer);
     return values;
 }
