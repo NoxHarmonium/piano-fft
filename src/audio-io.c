@@ -2,17 +2,24 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "config.h"
 #include "kiss_fft.h"
 #include "audio-io.h"
 
-
-// Opens the WAV file, populates the HEADER struct and does some basic sanity checking.
-// Also cues the file to the data.
-// Using https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
+/*
+ Opens the WAV file, populates the HEADER struct and does some basic sanity checking.
+ Also cues the file to the data.
+ Thanks: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
+*/
 int OpenWavFile(char *filename, WAVFILE *wavFile)
 {
+    WAVFILE_HEADER header;
+    size_t length;
+    int bytesRead;
+    unsigned char *buffer_ptr;    
+    
     printf("Attempting to open: '%s'\r\n", filename);
-    //WAVFILE _wavFile = *wavFile;
+   
     wavFile->valid = 0;
     wavFile->file = fopen(filename, "r");
 
@@ -21,9 +28,9 @@ int OpenWavFile(char *filename, WAVFILE *wavFile)
         return 1;
     }
 
-    WAVFILE_HEADER header;
-    // Read in header data.
-    size_t length = fread(&header, sizeof(header), 1, wavFile->file);
+    
+    /* Read in header data. */
+    length = fread(&header, sizeof(header), 1, wavFile->file);
 
     if (length != 1) {
         printf("Unable to read header data. Length: %i Expected: %i\r\n", length, 1);
@@ -48,13 +55,13 @@ int OpenWavFile(char *filename, WAVFILE *wavFile)
     wavFile->header = header;
     printf("Sample rate: %i, NumChannels: %i, BitsPerSample: %i\r\n", wavFile->header.SampleRate, wavFile->header.NumChannels, wavFile->header.BitsPerSample);
     wavFile->valid = 1;
-    // Basic sanity checks passed. Continue.
+    /* Basic sanity checks passed. Continue. */
     fseek(wavFile->file, HEADER_LENGTH, SEEK_SET);
     wavFile->buffer = malloc(wavFile->header.Subchunk2Size);
     wavFile->buffer_len = wavFile->header.Subchunk2Size;
-    wavFile->max_buffer_pos = wavFile->buffer + wavFile->buffer_len;
-    int bytesRead;
-    unsigned char *buffer_ptr = wavFile->buffer;
+    wavFile->max_buffer_pos = (int) (wavFile->buffer + wavFile->buffer_len);
+    
+    buffer_ptr = wavFile->buffer;
 
     do {
         bytesRead = fread(buffer_ptr, sizeof(unsigned char), 1024, wavFile->file);
@@ -67,41 +74,43 @@ int OpenWavFile(char *filename, WAVFILE *wavFile)
 
 kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int windowSize)
 {
+    kiss_fft_cpx *values;
     int i = 0;
     int bytesRead = 0;
     int _samplesRead = 0;
+    int maxValue = 0;
     int samples = wavFile->header.SampleRate * ((double)millis / 1000.0);
     int kissSamples = kiss_fft_next_fast_size(windowSize);
     int bytesPerSample = wavFile->header.BitsPerSample / 8;
+    unsigned char *buffer_pos;
+    kiss_fft_cpx empty;
+    
     wavFile->buffer += samples * bytesPerSample;
 
-    if (wavFile->buffer > wavFile->max_buffer_pos) {
-        printf("buffer (%x) > buffer length (%x) !\n", wavFile->buffer, wavFile->max_buffer_pos);
-        exit(1); // EOB
+    if ((int)wavFile->buffer > wavFile->max_buffer_pos) {
+        printf("buffer (%p) > buffer length (%x) !\n", wavFile->buffer, wavFile->max_buffer_pos);
+        exit(1); /* EOB */
     }
 
-    kiss_fft_cpx *values = malloc(kissSamples * sizeof(kiss_fft_cpx));
-    //unsigned char *buffer = malloc(bytesPerSample * sizeof(unsigned char) * samples);
-    //printf("Samples: %i, bytesPerSample: %i, sizeof(kiss_fft_cpx): %i\r\n", samples, bytesPerSample, sizeof(kiss_fft_cpx));
-    int maxValue = 0;
+    values = malloc(kissSamples * sizeof(kiss_fft_cpx));    
 
     for (i = 0; i < bytesPerSample; i++) {
         maxValue |= 0xFF << i * 8;
     }
 
-    //printf("maxValue: %i \r\n", maxValue);
-    bytesRead = windowSize; //fread(buffer, sizeof(unsigned char), bytesPerSample * samples, wavFile->file);
-
-    //printf("bytesRead: %i\r\n", bytesRead);
+ 
+    bytesRead = windowSize; 
 
     if (bytesRead == 0) {
         return NULL;
     }
 
     i = 0;
-    unsigned char *buffer_pos = wavFile->buffer;
+    
+    buffer_pos = wavFile->buffer;
 
     while (i < kissSamples) {
+        kiss_fft_cpx s;
         int j;
         int sample = 0;
         unsigned char *converter = calloc(sizeof(int), 1);
@@ -110,11 +119,10 @@ kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int wi
             converter[j] = buffer_pos[i + j];
         }
 
-        sample = *((int *)converter);
-        //printf("%x,",sample);
-        kiss_fft_cpx s;
+        sample = *((int *)converter);       
+        
         s.r = ((kiss_fft_scalar)sample) / (kiss_fft_scalar) maxValue;
-        //printf("%x = %f,",sample,s.r);
+
         assert(s.r <= 1.0);
         s.i = 0;
         i += bytesPerSample;
@@ -128,14 +136,13 @@ kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int wi
         free(converter);
     }
 
-    kiss_fft_cpx empty;
+    
 
     for (i = _samplesRead; i < kissSamples; i++) {
         values[i] = empty;
     }
 
     *samplesRead = kissSamples;
-    //free(buffer);
     return values;
 }
 

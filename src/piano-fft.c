@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <ddraw.h>
 
+#include "config.h"
 #include "kiss_fft.h"
 #include "audio-io.h"
 #include "piano-fft.h"
@@ -142,7 +143,7 @@ FFT_RESULT PerformFFT(kiss_fft_cpx *in, kiss_fft_cpx *out, int samplesRead)
     kiss_fft_cfg cfg;
 
     if (samplesRead > 0) {
-        //printf("Samples Read: %i \n", samplesRead);
+        /* printf("Samples Read: %i \n", samplesRead);  */
         if ((cfg = kiss_fft_alloc(samplesRead, 0/*is_inverse_fft*/, NULL, NULL)) != NULL) {
             size_t i;
             kiss_fft(cfg, in, out);

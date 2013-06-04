@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <windows.h>
+
+#include "config.h"
 #include "utils.h"
+
 
 long long milliseconds_now()
 {
@@ -24,14 +27,14 @@ void HSVtoRGB( float *r, float *g, float *b, float h, float s, float v )
     float f, p, q, t;
 
     if ( s == 0 ) {
-        // achromatic (grey)
+        /* achromatic (grey)  */
         *r = *g = *b = v;
         return;
     }
 
-    h /= 60;            // sector 0 to 5
+    h /= 60;            /* sector 0 to 5 */
     i = floor( h );
-    f = h - i;          // factorial part of h
+    f = h - i;          /* factorial part of h  */
     p = v * ( 1 - s );
     q = v * ( 1 - s * f );
     t = v * ( 1 - s * ( 1 - f ) );
@@ -67,7 +70,7 @@ void HSVtoRGB( float *r, float *g, float *b, float h, float s, float v )
             *b = v;
             break;
 
-        default:        // case 5:
+        default:        /* case 5: */
             *r = v;
             *g = p;
             *b = q;

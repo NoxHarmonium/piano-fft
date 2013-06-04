@@ -3,10 +3,11 @@
 #include <windows.h>
 #include "dd.h"
 
-
+#include "config.h"
 #include "kiss_fft.h"
 #include "audio-io.h"
-#include "fft-leds.h"
+#include "piano-fft.h"
+#include "utils.h"
 
 #define TIMER_ID 30
 #define TIMER_VALUE 100
@@ -23,7 +24,7 @@ int iterations = 0;
 
 void HeartBeat();
 
-// Globals
+/* Globals */
 char      g_szAppName[] = "DDSamp";
 HWND      g_hwndMain;
 HINSTANCE g_hInstance;
@@ -38,8 +39,8 @@ LRESULT CALLBACK WndProc(
 {
     switch ( msg ) {
         case WM_PAINT: {
-            // Let Windows know we've redrawn the Window - since we've bypassed
-            // the GDI, Windows can't figure that out by itself.
+            /* Let Windows know we've redrawn the Window - since we've bypassed
+               the GDI, Windows can't figure that out by itself. */
             ValidateRect( hWnd, NULL );
         }
         break;
@@ -64,6 +65,7 @@ WAVFILE setupAudio(char *filename)
         printf("Error opening audio file.\r\n");
         exit(EXIT_FAILURE);
     }
+    return audioFile;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -88,27 +90,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
     HWND hWnd = CreateWindowEx(
-                    0,          // Ex Styles
+                    0,              /* Ex Styles */
                     "ADPWinClass",
                     "ADP GmbH",
                     WS_OVERLAPPEDWINDOW,
-                    CW_USEDEFAULT,  // x
-                    CW_USEDEFAULT,  // y
-                    CW_USEDEFAULT,  // Height
-                    CW_USEDEFAULT,  // Width
-                    NULL,           // Parent Window
-                    NULL,           // Menu, or windows id if child
-                    hInstance,      //
-                    NULL            // Pointer to window specific data
+                    CW_USEDEFAULT,  /* x */
+                    CW_USEDEFAULT,  /* y */
+                    CW_USEDEFAULT,  /* Height */
+                    CW_USEDEFAULT,  /* Width */
+                    NULL,           /* Parent Window */
+                    NULL,           /* Menu, or windows id if child */
+                    hInstance,      /*  */
+                    NULL            /*  Pointer to window specific data */
                 );
 
-    // Initialize DirectDraw
+    /* Initialize DirectDraw */
     if (!DDInit( hWnd )) {
         MessageBox( hWnd, "Failed to initialize DirectDraw", "Error", MB_OK );
         return 0;
     }
 
-    // Create DirectDraw surfaces
+    /* Create DirectDraw surfaces */
     if (!DDCreateSurfaces( false )) {
         MessageBox( hWnd, "Failed to create surfaces", "Error", MB_OK );
         return 0;
@@ -120,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     lastLogTime = milliseconds_now();
     MSG msg;
     int r;
-    // Invalidate window area so that it gets redrawn first time round
+    /* Invalidate window area so that it gets redrawn first time round  */
     InvalidateRect( hWnd, NULL, TRUE );
     g_bRunning = true;
 
@@ -151,14 +153,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
     CloseWavFile(&audioFile);
-    // The application's return value
+    /* The application's return value  */
     return msg.wParam;
 }
 
 void HeartBeat()
 {
-    int i;
-    double random_number = rand() / (double)RAND_MAX;
+    int i;  
     int ms = (int) milliseconds_now() - lastFFTTime;
 
     if (ms < 33) {
@@ -172,12 +173,11 @@ void HeartBeat()
         fftResult.bins = NULL;
     }
 
-    samplesRead = 0;
-    kiss_fft_cfg cfg;
+    samplesRead = 0;    
     kiss_fft_cpx *in = LoadSamples(&audioFile, ms, &samplesRead, 16384);
     totalSamplesRead += samplesRead;
-    iterations++;
-    //printf("Time between frame %i ms, sr: %i ", ms, samplesRead);
+    iterations++;  
+     
     kiss_fft_cpx *result = malloc(samplesRead * sizeof(kiss_fft_cpx));
     fftResult = PerformFFT(in, result, samplesRead);
     fftResult.wavFile = &audioFile;
@@ -194,9 +194,9 @@ void HeartBeat()
         totalSamplesRead = 0;
     }
 
-    // Check for lost surfaces
+    /* Check for lost surfaces  */
     CheckSurfaces();
-    // Clear the back buffer
+    /* Clear the back buffer */
     DDClear( g_pDDSBack, 0, 0, 320, 240 );
     HDC hDC;
     IDirectDrawSurface_GetDC(g_pDDSBack, &hDC);
@@ -216,11 +216,11 @@ void HeartBeat()
         HBRUSH b = getKeyBrush(&fftResult, i);
         FillRect(hDC, &r2, b);
         DeleteObject(b);
-        //FrameRect(hDC, &r2, frameBrush);
+        /* FrameRect(hDC, &r2, frameBrush); */
     }
 
     DeleteObject(frameBrush);
     IDirectDrawSurface_ReleaseDC(g_pDDSBack, hDC);
-    // Blit the back buffer to the front buffer
+    /* Blit the back buffer to the front buffer */
     DDFlip();
 }

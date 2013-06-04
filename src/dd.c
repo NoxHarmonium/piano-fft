@@ -5,14 +5,14 @@
 #include <ddraw.h>
 #include <stdio.h>
 /*--------------------------------------------------------------------------*/
-LPDIRECTDRAW        g_pDD          = NULL;  // The DirectDraw object
-LPDIRECTDRAWCLIPPER g_pClipper     = NULL;  // Clipper for primary surface
-LPDIRECTDRAWSURFACE g_pDDS         = NULL;  // Primary surface
-LPDIRECTDRAWSURFACE g_pDDSBack     = NULL;  // Back surface
-HWND                g_hWnd         = NULL;  // To store the main windows handle
-bool                g_bFullScreen  = false; // Full-screen mode?
+LPDIRECTDRAW        g_pDD          = NULL;  /* The DirectDraw object */
+LPDIRECTDRAWCLIPPER g_pClipper     = NULL;  /* Clipper for primary surface */
+LPDIRECTDRAWSURFACE g_pDDS         = NULL;  /* Primary surface */
+LPDIRECTDRAWSURFACE g_pDDSBack     = NULL;  /* Back surface */
+HWND                g_hWnd         = NULL;  /* To store the main windows handle */
+bool                g_bFullScreen  = false; /* Full-screen mode? */
 
-int                 g_iBpp         = 0;     // Remember the main surface bit depth
+int                 g_iBpp         = 0;     /* Remember the main surface bit depth */
 /*--------------------------------------------------------------------------*/
 bool DDFailedCheck(HRESULT hr, char *szMessage)
 {
@@ -26,13 +26,13 @@ bool DDFailedCheck(HRESULT hr, char *szMessage)
     return false;
 }
 /*--------------------------------------------------------------------------*/
-// Initialize DirectDraw stuff
+/* Initialize DirectDraw stuff */
 bool DDInit( HWND hWnd )
 {
     HRESULT hr;
     g_hWnd = hWnd;
-    // TODO: Enumerate devices here, get latest interfaces etc.
-    // Initialize DirectDraw
+    /* TODO: Enumerate devices here, get latest interfaces etc. */
+    /* Initialize DirectDraw */
     hr = DirectDrawCreate( NULL, &g_pDD, NULL );
 
     if (DDFailedCheck(hr, "DirectDrawCreate failed" )) {
@@ -42,29 +42,29 @@ bool DDInit( HWND hWnd )
     return true;
 }
 /*--------------------------------------------------------------------------*/
-// Create surfaces
+/* Create surfaces */
 bool DDCreateSurfaces( bool bFullScreen)
 {
-    HRESULT hr; // Holds return values for DirectX function calls
+    HRESULT hr; /* Holds return values for DirectX function calls */
     g_bFullScreen = bFullScreen;
 
-    // If we want to be in full-screen mode
+    /* If we want to be in full-screen mode */
     if (g_bFullScreen) {
-        // Set the "cooperative level" so we can use full-screen mode
+        /* Set the "cooperative level" so we can use full-screen mode */
         hr = IDirectDraw7_SetCooperativeLevel(g_pDD, g_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN | DDSCL_NOWINDOWCHANGES);
 
         if (DDFailedCheck(hr, "SetCooperativeLevel")) {
             return false;
         }
 
-        // Set 640x480x256 full-screen mode
+        /* Set 640x480x256 full-screen mode */
         hr = g_pDD->lpVtbl->SetDisplayMode(g_pDD, 640 , 480 , 8 );
 
         if (DDFailedCheck(hr, "SetDisplayMode" )) {
             return false;
         }
     } else {
-        // Set DDSCL_NORMAL to use windowed mode
+        /* Set DDSCL_NORMAL to use windowed mode */
         hr = IDirectDraw7_SetCooperativeLevel(g_pDD, g_hWnd, DDSCL_NORMAL);
 
         if (DDFailedCheck(hr, "SetCooperativeLevel windowed" )) {
@@ -72,18 +72,18 @@ bool DDCreateSurfaces( bool bFullScreen)
         }
     }
 
-    DDSURFACEDESC ddsd; // A structure to describe the surfaces we want
-    // Clear all members of the structure to 0
+    DDSURFACEDESC ddsd; /* A structure to describe the surfaces we want */
+    /* Clear all members of the structure to 0 */
     memset(&ddsd, 0, sizeof(ddsd));
-    // The first parameter of the structure must contain the size of the structure
+    /* The first parameter of the structure must contain the size of the structure */
     ddsd.dwSize = sizeof(ddsd);
 
     if (g_bFullScreen) {
-        // Screw the full-screen mode (for now) (FIXME)
+        /* Screw the full-screen mode (for now) (FIXME) */
     } else {
-        //-- Create the primary surface
-        // The dwFlags paramater tell DirectDraw which DDSURFACEDESC
-        // fields will contain valid values
+        /*-- Create the primary surface */
+        /* The dwFlags paramater tell DirectDraw which DDSURFACEDESC */
+        /* fields will contain valid values */
         ddsd.dwFlags = DDSD_CAPS;
         ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
         hr = IDirectDraw7_CreateSurface(g_pDD, &ddsd, &g_pDDS, NULL);
@@ -92,12 +92,12 @@ bool DDCreateSurfaces( bool bFullScreen)
             return false;
         }
 
-        //-- Create the back buffer
+        /*-- Create the back buffer */
         ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
-        // Make our off-screen surface 320x240
+        /* Make our off-screen surface 320x240 */
         ddsd.dwWidth = 320;
         ddsd.dwHeight = 240;
-        // Create an offscreen surface
+        /* Create an offscreen surface */
         ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
         hr = IDirectDraw7_CreateSurface(g_pDD, &ddsd, &g_pDDSBack, NULL);
 
@@ -106,23 +106,23 @@ bool DDCreateSurfaces( bool bFullScreen)
         }
     }
 
-    //-- Create a clipper for the primary surface in windowed mode->
+    /*-- Create a clipper for the primary surface in windowed mode-> */
     if (!g_bFullScreen) {
-        // Create the clipper using the DirectDraw object
+        /* Create the clipper using the DirectDraw object */
         hr = IDirectDraw7_CreateClipper(g_pDD, 0, &g_pClipper, NULL);
 
         if (DDFailedCheck(hr, "Create clipper")) {
             return false;
         }
 
-        // Assign your window's HWND to the clipper
+        /* Assign your window's HWND to the clipper */
         hr = IDirectDrawClipper_SetHWnd(g_pClipper, 0, g_hWnd);
 
         if (DDFailedCheck(hr, "Assign hWnd to clipper")) {
             return false;
         }
 
-        // Attach the clipper to the primary surface
+        /* Attach the clipper to the primary surface */
         hr = IDirectDrawSurface_SetClipper(g_pDDS, g_pClipper);
 
         if (DDFailedCheck(hr, "Set clipper")) {
@@ -130,7 +130,7 @@ bool DDCreateSurfaces( bool bFullScreen)
         }
     }
 
-    //-- Lock back buffer to retrieve surface information
+    /*-- Lock back buffer to retrieve surface information */
     if (g_pDDSBack) {
         hr = IDirectDrawSurface_Lock(g_pDDSBack, NULL, &ddsd, DDLOCK_WAIT, NULL );
 
@@ -138,9 +138,9 @@ bool DDCreateSurfaces( bool bFullScreen)
             return false;
         }
 
-        // Store bit depth of surface
+        /* Store bit depth of surface */
         g_iBpp = ddsd.ddpfPixelFormat.dwRGBBitCount;
-        // Unlock surface
+        /* Unlock surface */
         hr = IDirectDrawSurface_Unlock(g_pDDSBack, NULL );
 
         if (DDFailedCheck(hr, "Unlock back buffer failed" )) {
@@ -151,12 +151,12 @@ bool DDCreateSurfaces( bool bFullScreen)
     return true;
 }
 /*--------------------------------------------------------------------------*/
-// Destroy surfaces
+/* Destroy surfaces */
 void DDDestroySurfaces()
 {
 }
 /*--------------------------------------------------------------------------*/
-// Clean up DirectDraw stuff
+/* Clean up DirectDraw stuff */
 void DDDone()
 {
     if (g_pDD != NULL) {
@@ -165,40 +165,40 @@ void DDDone()
     }
 }
 /*--------------------------------------------------------------------------*/
-// PutPixel routine for a DirectDraw surface
+/* PutPixel routine for a DirectDraw surface */
 void DDPutPixel( LPDIRECTDRAWSURFACE pDDS, int x, int y, int r, int g, int b )
 {
     HRESULT hr;
     DDBLTFX ddbfx;
     RECT    rcDest;
 
-    // Safety net
+    /* Safety net */
     if (pDDS == NULL) {
         return;
     }
 
-    // Initialize the DDBLTFX structure with the pixel color
+    /* Initialize the DDBLTFX structure with the pixel color */
     ddbfx.dwSize = sizeof( ddbfx );
     ddbfx.dwFillColor = (DWORD)CreateRGB( r, g, b );
-    // Prepare the destination rectangle as a 1x1 (1 pixel) rectangle
+    /* Prepare the destination rectangle as a 1x1 (1 pixel) rectangle */
     SetRect( &rcDest, x, y, x + 1, y + 1 );
-    // Blit 1x1 rectangle using solid color op
+    /* Blit 1x1 rectangle using solid color op */
     hr = IDirectDrawSurface_Blt(pDDS, &rcDest, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddbfx );
     DDFailedCheck(hr, "Blt failure");
 }
 /*--------------------------------------------------------------------------*/
-// Create color from RGB triple
+/* Create color from RGB triple */
 unsigned int CreateRGB( int r, int g, int b )
 {
     switch (g_iBpp) {
         case 8:
-            // Here you should do a palette lookup to find the closes match.
-            // I'm not going to bother with that. Many modern games no
-            // longer support 256-color modes, and neither should you :)
+            /* Here you should do a palette lookup to find the closes match. */
+            /* I'm not going to bother with that. Many modern games no */
+            /* longer support 256-color modes, and neither should you :) */
             return 0;
 
         case 16:
-            // Break down r,g,b into 5-6-5 format.
+            /* Break down r,g,b into 5-6-5 format. */
             return ((r / 8) << 11) | ((g / 4) << 5) | (b / 8);
 
         case 24:
@@ -516,17 +516,17 @@ char *DDErrorString(HRESULT hr)
     return "Unknown Error";
 }
 /*--------------------------------------------------------------------------*/
-// Checks if the memory associated with surfaces is lost and restores if necessary.
+/* Checks if the memory associated with surfaces is lost and restores if necessary. */
 void CheckSurfaces()
 {
-    // Check the primary surface
+    /* Check the primary surface */
     if (g_pDDS) {
         if (IDirectDrawSurface_IsLost(g_pDDS) == DDERR_SURFACELOST) {
             IDirectDrawSurface_Restore(g_pDDS);
         }
     }
 
-    // Check the back buffer
+    /* Check the back buffer */
     if (g_pDDSBack) {
         if (IDirectDrawSurface_IsLost(g_pDDSBack) == DDERR_SURFACELOST) {
             IDirectDrawSurface_Restore(g_pDDSBack);
@@ -534,17 +534,17 @@ void CheckSurfaces()
     }
 }
 /*--------------------------------------------------------------------------*/
-// Double buffering flip
+/* Double buffering flip */
 void DDFlip()
 {
     HRESULT hr;
 
-    // if we're windowed do the blit, else just Flip
+    /* if we're windowed do the blit, else just Flip */
     if (!g_bFullScreen) {
-        RECT    rcSrc;  // source blit rectangle
-        RECT    rcDest; // destination blit rectangle
+        RECT    rcSrc;  /* source blit rectangle */
+        RECT    rcDest; /* destination blit rectangle */
         POINT   p;
-        // find out where on the primary surface our window lives
+        /* find out where on the primary surface our window lives */
         p.x = 0;
         p.y = 0;
         ClientToScreen(g_hWnd, &p);
@@ -557,23 +557,23 @@ void DDFlip()
     }
 }
 /*--------------------------------------------------------------------------*/
-// Clear a surface area with black
+/* Clear a surface area with black */
 void DDClear( LPDIRECTDRAWSURFACE pDDS, int x1, int y1, int x2, int y2 )
 {
     HRESULT hr;
     DDBLTFX ddbfx;
     RECT    rcDest;
 
-    // Safety net
+    /* Safety net */
     if (pDDS == NULL) {
         return;
     }
 
-    // Initialize the DDBLTFX structure with the pixel color
+    /* Initialize the DDBLTFX structure with the pixel color */
     ddbfx.dwSize = sizeof( ddbfx );
     ddbfx.dwFillColor = (DWORD)CreateRGB( 0, 0, 0 );
     SetRect( &rcDest, x1, y1, x2, y2 );
-    // Blit 1x1 rectangle using solid color op
+    /* Blit 1x1 rectangle using solid color op */
     hr = IDirectDrawSurface_Blt( pDDS, &rcDest, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddbfx );
     DDFailedCheck(hr, "Blt failure");
 }

@@ -1,8 +1,15 @@
+/*
+* audio-io.h
+* 
+* Defines the structs and functions related to audio file 
+* access.
+*
+*/
+
 #ifndef AUDIO_IO_H
 #define AUDIO_IO_H
 
-#define HEADER_LENGTH 44
-#define AUDIO_FILE "./sourcebbt.wav"
+/* Structs */
 
 typedef struct {
     int32_t  ChunkID;
@@ -32,7 +39,7 @@ typedef struct {
 } WAVFILE ;
 
 
-
+/* Function Prototypes */
 
 int OpenWavFile(char *filename, WAVFILE *wavFile);
 int CloseWavFile(WAVFILE *wavFile);
