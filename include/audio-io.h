@@ -9,6 +9,8 @@
 #ifndef AUDIO_IO_H
 #define AUDIO_IO_H
 
+#include <stdint.h>
+
 /* Structs */
 
 typedef struct {
@@ -33,8 +35,8 @@ typedef struct {
     FILE *file;
     WAVFILE_HEADER header;
     unsigned char* buffer;    
-    unsigned char* window_pos;
-    unsigned char* buffer_pos;
+    int window_pos;
+    int buffer_pos;
 
 } WAVFILE ;
 
@@ -44,6 +46,8 @@ typedef struct {
 int OpenWavFile(char *filename, WAVFILE *wavFile);
 int CloseWavFile(WAVFILE *wavFile);
 kiss_fft_cpx *LoadSamples(WAVFILE *wavFile, int millis, int *samplesRead, int windowSize);
-
+void LoadBuffer(WAVFILE* wavFile);
+int BufferAdvance(int position, int offset, int windowSize);
+void AdvanceWindow(WAVFILE* wavFile, int ms);
 
 #endif

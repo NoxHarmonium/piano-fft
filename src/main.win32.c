@@ -32,6 +32,74 @@ HINSTANCE g_hInstance;
 bool      g_bRunning;
 
 
+HBRUSH convertBrush(FFT_BRUSH brush)
+{
+    HBRUSH brush =
+        CreateSolidBrush(
+            RGB(
+                brush.r,
+                brush.g,
+                brush.b
+            )
+        );
+    return brush;
+}
+
+RECT convertRect(FFT_RECT rect)
+{
+	RECT r =
+    {
+        rect.x,
+        rect.y,
+        rect.x + rect.w,
+        rect.y + rect.h
+    };
+
+	return r;
+		
+
+
+}
+
+long long milliseconds_now()
+{
+    LARGE_INTEGER s_frequency;
+    BOOL s_use_qpc = QueryPerformanceFrequency(&s_frequency);
+
+    if (s_use_qpc)
+    {
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        return (1000LL * now.QuadPart) / s_frequency.QuadPart;
+    }
+    else
+    {
+        return GetTickCount();
+    }
+}
+
+
+char* WCharToChar(LPWSTR wideStr)
+{
+    char* trimmedString, *buffer;
+    int bufferSize = 512;
+    buffer = malloc(bufferSize);
+    int len = wcstombs(buffer, wideStr, bufferSize);
+    if (len == bufferSize)
+    {
+        buffer[bufferSize-1] = '\0';
+    }
+   
+    trimmedString = malloc(len);
+    strcpy(trimmedString,buffer);
+    
+ 
+    
+    free(buffer);
+    
+    return trimmedString;
+}
+
 void printUsage()
 {
     printf("Usage: piano-fft.exe <filename>\n");
@@ -252,7 +320,7 @@ void HeartBeat()
     DDClear( g_pDDSBack, 0, 0, 320, 240 );
     HDC hDC;
     IDirectDrawSurface_GetDC(g_pDDSBack, &hDC);
-    RECT r = getKeyboardRect();
+    RECT r = convertRect(getKeyboardRect());
     HBRUSH frameBrush =
         CreateSolidBrush(
             RGB(
@@ -265,8 +333,8 @@ void HeartBeat()
 
     for (i = 0; i < KEY_COUNT; i++)
     {
-        RECT r2 = getKeyRect(i);
-        HBRUSH b = getKeyBrush(&fftResult, i);
+        RECT r2 = convertRect(getKeyRect(i));
+        HBRUSH b = convertBrush(getKeyBrush(&fftResult, i));
         FillRect(hDC, &r2, b);
         DeleteObject(b);
         /* FrameRect(hDC, &r2, frameBrush); */

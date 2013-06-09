@@ -6,6 +6,7 @@
 #include "kiss_fft.h"
 #include "audio-io.h"
 
+
 /*
  Opens the WAV file, populates the HEADER struct and does some basic sanity checking.
  Also cues the file to the data.
@@ -15,8 +16,6 @@ int OpenWavFile(char* filename, WAVFILE* wavFile)
 {
     WAVFILE_HEADER header;
     size_t length;
-    int bytesRead;
-    unsigned char* buffer_ptr;
 
     printf("Attempting to open: '%s'\r\n", filename);
 
@@ -35,7 +34,7 @@ int OpenWavFile(char* filename, WAVFILE* wavFile)
 
     if (length != 1)
     {
-        printf("Unable to read header data. Length: %i Expected: %i\r\n", length, 1);
+        printf("Unable to read header data. Length: %i Expected: %i\r\n", (int)length, 1);
         return 1;
     }
 
@@ -73,9 +72,9 @@ int OpenWavFile(char* filename, WAVFILE* wavFile)
 }
 
 /* Advance a pointer with wrapping. */
-unsigned char* BufferAdvance(unsigned char* position, unsigned char* offset, int windowSize)
+int BufferAdvance(int position, int offset, int windowSize)
 {
-    unsigned char* result = position + offset;
+    int result = position + offset;
     result = result % (BUFFER_SIZE - windowSize);      
     
     return result;    
@@ -83,28 +82,48 @@ unsigned char* BufferAdvance(unsigned char* position, unsigned char* offset, int
 
 void LoadBuffer(WAVFILE* wavFile)
 {
+	int bytesRead, distance;
     /* Try to align the file buffer on the opposite side of the circular buffer to the window */
-    unsigned char* desiredPosition = BufferAdvance(wavFile->window_pos, BUFFER_SIZE / 2, CHUNK_SIZE);
-    if (wavFile->buffer_pos >= desiredPosition)
-        return;
     
+	if (wavFile->window_pos < wavFile->buffer_pos)
+    {
+		distance = wavFile->buffer_pos - wavFile->window_pos;
+	}
+	else
+	{
+		distance = wavFile->buffer_pos + (BUFFER_SIZE - wavFile->window_pos);
+	} 
+
+	if (distance >= BUFFER_SIZE / 2)
+	{
+		/* Buffer already loaded up */
+		return;
+	}
+   
     wavFile->buffer_pos = BufferAdvance(wavFile->buffer_pos, CHUNK_SIZE, CHUNK_SIZE);
     
-    bytesRead = fread(wavFile->buffer + wavFile->buffer_pos, sizeof(unsigned char), BUFFER_CHUNK, wavFile->file);
-    wavFile->buffer_pos = bytesRead; 
+    bytesRead = fread(wavFile->buffer + wavFile->buffer_pos, sizeof(unsigned char), CHUNK_SIZE, wavFile->file);
+    if (bytesRead < CHUNK_SIZE)
+	{
+		printf("bytesRead < CHUNK_SIZE\n");
+		exit(EXIT_SUCCESS);
+	}
     
 
 }
 
 void AdvanceWindow(WAVFILE* wavFile, int ms)
 {
-    int samples = wavFile->header.SampleRate * ((double)millis / 1000.0);
+	printf("Advance window by %i \n", ms);
+    int samples = wavFile->header.SampleRate * ((double)ms / 1000.0);
     wavFile->window_pos = BufferAdvance(wavFile->window_pos, samples, WINDOW_SIZE);   
 
 }
 
 kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int windowSize)
 {
+	printf("Load samples\n");
+
     kiss_fft_cpx* values;
     int i = 0;
     int bytesRead = 0;
@@ -117,12 +136,6 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
     kiss_fft_cpx empty;
 
     wavFile->buffer += samples * bytesPerSample;
-
-    if ((int)wavFile->buffer > wavFile->max_buffer_pos)
-    {
-        printf("buffer (%p) > buffer length (%x) !\n", wavFile->buffer, wavFile->max_buffer_pos);
-        exit(1); /* EOB */
-    }
 
     values = malloc(kissSamples * sizeof(kiss_fft_cpx));
 

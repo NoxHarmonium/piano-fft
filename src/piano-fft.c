@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <windows.h>
 #include <math.h>
 #include <assert.h>
-#include <ddraw.h>
 
 #include "config.h"
 #include "kiss_fft.h"
@@ -30,50 +28,46 @@ const float pFreqTable[52] =
 /* An array of magnitudes to allow for smoothing */
 kiss_fft_scalar magnitudes[52];
 
-RECT getKeyboardRect()
+FFT_RECT getKeyboardRect()
 {
-    RECT r =
+    FFT_RECT r =
     {
         KEYBOARD_XOFFSET,
         KEYBOARD_YOFFSET,
-        KEYBOARD_XOFFSET + KEYBOARD_WIDTH,
-        KEYBOARD_YOFFSET + KEYBOARD_HEIGHT
+        KEYBOARD_WIDTH,
+        KEYBOARD_HEIGHT
     };
     return r;
 }
 
-RECT getKeyRect(int keyIndex)
+FFT_RECT getKeyRect(int keyIndex)
 {
     int left = KEYBOARD_XOFFSET + (keyIndex * KEY_WIDTH);
-    RECT r =
+    FFT_RECT r =
     {
         left,
         KEYBOARD_YOFFSET,
-        left + KEY_WIDTH,
-        KEYBOARD_YOFFSET + KEYBOARD_HEIGHT
+        KEY_WIDTH,
+        KEYBOARD_HEIGHT
     };
     return r;
 }
 
-HBRUSH createBrush(int r, int g, int b)
+FFT_BRUSH createBrush(int r, int g, int b)
 {
-    HBRUSH brush =
-        CreateSolidBrush(
-            RGB(
-                r,
-                g,
-                b
-            )
-        );
-    return brush;
+	FFT_BRUSH brush;
+	brush.r = r;
+	brush.g = g;
+	brush.b = b;
+	return brush;
 }
 
-HBRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
+FFT_BRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
 {
     float r = 0;
     float g = 0;
     float b = 0;
-
+	
     if (result->wavFile == NULL)
     {
         return createBrush((int)r, (int)g, (int)b);
@@ -93,14 +87,15 @@ HBRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
     }
 
     kiss_fft_scalar value = sqrt(pow(result->bins[binIndex].r, 2) + pow(result->bins[binIndex].i, 2));
-    magnitudes[keyIndex] = max(value, magnitudes[keyIndex]);
+    magnitudes[keyIndex] = fmax(value, magnitudes[keyIndex]);
     float h = 0;
     float s = 1;
     float v = 1;
     h = magnitudes[keyIndex] / ((kiss_fft_scalar)samples / 2) * 360;
     magnitudes[keyIndex] *= 0.90;
     HSVtoRGB( &r, &g, &b, h, s, v );
-    return createBrush((int)floor(r * 254), (int)floor(g * 254), (int)floor(b * 254));
+	
+    return createBrush((int)floor(r * 254),(int)floor(g * 254),(int)floor(b * 254));
 }
 
 
