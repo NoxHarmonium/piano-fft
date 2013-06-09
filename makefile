@@ -6,13 +6,14 @@ IDIR=include
 ODIR=obj
 LDIR=lib
 SDIR=src
+MAINFILE=main.sdl.o
 
 LIBS=-lm -mwindows -lddraw
 
 _DEPS = _kiss_fft_guts.h  audio-io.h  dd.h  piano-fft.h  kiss_fft.h  utils.h config.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = audio-io.o  dd.o  kiss_fft.o  main.o  piano-fft.o  utils.o
+_OBJ = audio-io.o  dd.o  kiss_fft.o  piano-fft.o  utils.o $(MAINFILE)
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
