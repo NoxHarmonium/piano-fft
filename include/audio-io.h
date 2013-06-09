@@ -32,9 +32,9 @@ typedef struct {
     int valid;
     FILE *file;
     WAVFILE_HEADER header;
-    unsigned char* buffer;
-    int buffer_len ;
-    int max_buffer_pos; 
+    unsigned char* buffer;    
+    unsigned char* window_pos;
+    unsigned char* buffer_pos;
 
 } WAVFILE ;
 

@@ -62,21 +62,45 @@ int OpenWavFile(char* filename, WAVFILE* wavFile)
     wavFile->valid = 1;
     /* Basic sanity checks passed. Continue. */
     fseek(wavFile->file, HEADER_LENGTH, SEEK_SET);
-    wavFile->buffer = malloc(wavFile->header.Subchunk2Size);
-    wavFile->buffer_len = wavFile->header.Subchunk2Size;
-    wavFile->max_buffer_pos = (int) (wavFile->buffer + wavFile->buffer_len);
+    wavFile->buffer = malloc(BUFFER_SIZE);     
 
-    buffer_ptr = wavFile->buffer;
-
-    do
-    {
-        bytesRead = fread(buffer_ptr, sizeof(unsigned char), 1024, wavFile->file);
-        buffer_ptr += bytesRead;
-    }
-    while (bytesRead > 0);
+    /* Load initial buffer */
+    LoadBuffer(wavFile);
+  
 
     printf("WAV file opened successfully.\r\n");
     return 0;
+}
+
+/* Advance a pointer with wrapping. */
+unsigned char* BufferAdvance(unsigned char* position, unsigned char* offset, int windowSize)
+{
+    unsigned char* result = position + offset;
+    result = result % (BUFFER_SIZE - windowSize);      
+    
+    return result;    
+}
+
+void LoadBuffer(WAVFILE* wavFile)
+{
+    /* Try to align the file buffer on the opposite side of the circular buffer to the window */
+    unsigned char* desiredPosition = BufferAdvance(wavFile->window_pos, BUFFER_SIZE / 2, CHUNK_SIZE);
+    if (wavFile->buffer_pos >= desiredPosition)
+        return;
+    
+    wavFile->buffer_pos = BufferAdvance(wavFile->buffer_pos, CHUNK_SIZE, CHUNK_SIZE);
+    
+    bytesRead = fread(wavFile->buffer + wavFile->buffer_pos, sizeof(unsigned char), BUFFER_CHUNK, wavFile->file);
+    wavFile->buffer_pos = bytesRead; 
+    
+
+}
+
+void AdvanceWindow(WAVFILE* wavFile, int ms)
+{
+    int samples = wavFile->header.SampleRate * ((double)millis / 1000.0);
+    wavFile->window_pos = BufferAdvance(wavFile->window_pos, samples, WINDOW_SIZE);   
+
 }
 
 kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int windowSize)
