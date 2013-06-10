@@ -148,12 +148,15 @@ int main(int argc, char *argv[])
 
 	atexit(SDL_Quit); /* Call SDL_QUIT when program exits normally */
 
+	lastLogTime = SDL_GetTicks();
+	lastFFTTime = SDL_GetTicks();
+
 	setupScreen();
 	/* TODO: Basic argument sanity checking */
 	setupAudio(argv[1]);
 
 	while (running) {
-        SDL_WaitEvent(&event);
+        SDL_PollEvent(&event);
         if (event.type == SDL_QUIT)
             running = false;
 		
