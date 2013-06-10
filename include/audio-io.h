@@ -37,6 +37,8 @@ typedef struct {
     unsigned char* buffer;    
     int window_pos;
     int buffer_pos;
+	int totalBytesPlayed;
+	int totalBytesRead;
 
 } WAVFILE ;
 

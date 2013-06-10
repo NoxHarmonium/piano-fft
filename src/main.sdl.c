@@ -38,7 +38,7 @@ WAVFILE setupAudio(char* filename)
 void setupScreen()
 {	
 
-    screen = SDL_SetVideoMode(640, 480, 16, SDL_SWSURFACE);
+    screen = SDL_SetVideoMode(KEYBOARD_WIDTH, KEYBOARD_HEIGHT, 16, SDL_SWSURFACE);
     if ( screen == NULL ) {
         fprintf(stderr, "Unable to set 640x480 video: %s\n", SDL_GetError());
         exit(EXIT_FAILURE);
@@ -88,7 +88,11 @@ void HeartBeat()
 
     samplesRead = 0;
 
+	AdvanceWindow(&audioFile, ms);
+	LoadBuffer(&audioFile);
     kiss_fft_cpx* in = LoadSamples(&audioFile, ms, &samplesRead, WINDOW_SIZE);
+
+
     totalSamplesRead += samplesRead;
     iterations++;
 
@@ -101,10 +105,11 @@ void HeartBeat()
     if (ms > 1000)
     {
         lastLogTime = SDL_GetTicks();
+		float secondsPlayed = totalSamplesRead / (float) audioFile.header.SampleRate;
         float avBins = (totalSamplesRead / (float) iterations) / 2.0;
         float nyquist = audioFile.header.SampleRate / 2.0;
         float binres = nyquist / avBins;
-        printf("Log (1000ms) av bins: %f, nyquist: %f hz, bin res: %f \n", avBins, nyquist, binres );
+        printf("Log (1000ms) av bins: %f, nyquist: %f hz, bin res: %f s: %f \n", avBins, nyquist, binres,secondsPlayed);
         iterations = 0;
         totalSamplesRead = 0;
     }  
@@ -131,6 +136,7 @@ void HeartBeat()
         FillRect(r2, b);       
     }
    
+	
 	
 
 }

@@ -20,6 +20,8 @@ int OpenWavFile(char* filename, WAVFILE* wavFile)
     printf("Attempting to open: '%s'\r\n", filename);
 
     wavFile->valid = 0;
+	wavFile->totalBytesRead = 0;
+	wavFile->totalBytesPlayed = 0;
     wavFile->file = fopen(filename, "r");
 
     if (wavFile->file == NULL)
@@ -85,24 +87,29 @@ void LoadBuffer(WAVFILE* wavFile)
 	int bytesRead, distance;
     /* Try to align the file buffer on the opposite side of the circular buffer to the window */
     
-	if (wavFile->window_pos < wavFile->buffer_pos)
-    {
-		distance = wavFile->buffer_pos - wavFile->window_pos;
-	}
-	else
-	{
-		distance = wavFile->buffer_pos + (BUFFER_SIZE - wavFile->window_pos);
-	} 
+	distance = wavFile->totalBytesRead - wavFile->totalBytesPlayed;	
 
-	if (distance >= BUFFER_SIZE / 2)
+	if (distance >= BUFFER_SIZE/2)
 	{
 		/* Buffer already loaded up */
 		return;
 	}
-   
+
+	if (distance <= 0)
+	{
+		printf("Buffer overrun\n");
+
+	}
+
+	/*printf("BA (d:%i)\n",distance);   */
+
     wavFile->buffer_pos = BufferAdvance(wavFile->buffer_pos, CHUNK_SIZE, CHUNK_SIZE);
+
     
     bytesRead = fread(wavFile->buffer + wavFile->buffer_pos, sizeof(unsigned char), CHUNK_SIZE, wavFile->file);
+
+	wavFile->totalBytesRead += bytesRead;
+	
     if (bytesRead < CHUNK_SIZE)
 	{
 		printf("bytesRead < CHUNK_SIZE\n");
@@ -112,12 +119,40 @@ void LoadBuffer(WAVFILE* wavFile)
 
 }
 
-void AdvanceWindow(WAVFILE* wavFile, int ms)
+void PrintBufferPos(WAVFILE* wavFile)
 {
-	printf("Advance window by %i \n", ms);
+	int i = 0;
+	int width = 10;
+
+	int b = (int)(width * ((wavFile->buffer_pos + CHUNK_SIZE) / (float)BUFFER_SIZE));
+	int w = (int)(width * (wavFile->window_pos / (float)BUFFER_SIZE));
+
+	for (i = 0; i <= width; i++)
+	{
+		if (i == b)
+			printf("b");
+		else if (i == w)
+			printf("w");
+		else
+			printf("-");
+	}
+	
+	printf("\n");
+
+}
+
+void AdvanceWindow(WAVFILE* wavFile, int ms)
+{	
     int samples = wavFile->header.SampleRate * ((double)ms / 1000.0);
     wavFile->window_pos = BufferAdvance(wavFile->window_pos, samples, WINDOW_SIZE);   
 
+	wavFile->totalBytesPlayed += samples;
+
+	if (wavFile->totalBytesPlayed > wavFile->totalBytesRead)
+	{
+		printf("Buffer overrun. (%i>%i)\n", wavFile->totalBytesPlayed, wavFile->totalBytesRead);
+		exit(EXIT_FAILURE);
+	}
 }
 
 kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int windowSize)
@@ -150,25 +185,19 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
 
     i = 0;
 
-    buffer_pos = wavFile->buffer;
+	/*printf("(%i = %i = %i)\n", wavFile->buffer_pos, wavFile->window_pos, BUFFER_SIZE);*/
+	/*PrintBufferPos(wavFile);*/
 
-    while (i < kissSamples)
-    {
-    
-		
+    buffer_pos = wavFile->buffer + wavFile->window_pos;
+
+    while (_samplesRead < kissSamples)
+    {		
 		kiss_fft_cpx s;
         int j = 0;
         int sample = 0;
-        unsigned char* converter = calloc(sizeof(int), 1);
+        unsigned char* converter = calloc(sizeof(int), 1);		
 
-		if (i+j > wavFile->header.Subchunk2Size)
-		{
-			/* TODO: Maybe loop around rather than just exiting when stream is finished. */
-			printf("End of stream reached. (%i>%i)\n", i+j, wavFile->header.Subchunk2Size);
-			exit(EXIT_FAILURE);
-		}
-
-        for (j = 0; j < bytesPerSample; j++)
+	    for (j = 0; j < bytesPerSample; j++)
         {
             converter[j] = buffer_pos[i + j];
         }
@@ -178,6 +207,7 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
         s.r = ((kiss_fft_scalar)sample) / (kiss_fft_scalar) maxValue;
 
         assert(s.r <= 1.0);
+		/*printf("%f,", s.r);*/
         s.i = 0;
         i += bytesPerSample;
 
@@ -191,7 +221,7 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
         free(converter);
     }
 
-
+	/*printf("\n");*/
 
     for (i = _samplesRead; i < kissSamples; i++)
     {
