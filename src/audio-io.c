@@ -122,8 +122,6 @@ void AdvanceWindow(WAVFILE* wavFile, int ms)
 
 kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int windowSize)
 {
-	printf("Load samples\n");
-
     kiss_fft_cpx* values;
     int i = 0;
     int bytesRead = 0;
@@ -162,6 +160,13 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
         int j;
         int sample = 0;
         unsigned char* converter = calloc(sizeof(int), 1);
+
+		if (i+j > wavFile->header.Subchunk2Size)
+		{
+			/* TODO: Maybe loop around rather than just exiting when stream is finished. */
+			printf("End of stream reached.\n");
+			exit(EXIT_FAILURE);
+		}
 
         for (j = 0; j < bytesPerSample; j++)
         {
