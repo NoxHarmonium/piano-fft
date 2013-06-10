@@ -13,7 +13,7 @@
 /* FFT Settings */
 #define WINDOW_SIZE 8172
 #define BUFFER_SIZE 176400
-#define CHUNK_SIZE 4086
+#define CHUNK_SIZE 16344
 #define HEADER_LENGTH 44
 #define MAX_POS (BUFFER_LENGTH - WINDOW_SIZE)
 

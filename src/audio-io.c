@@ -67,7 +67,7 @@ int OpenWavFile(char* filename, WAVFILE* wavFile)
 
     /* Load initial buffer */
     LoadBuffer(wavFile);
-  
+ 
 
     printf("WAV file opened successfully.\r\n");
     return 0;
@@ -143,10 +143,10 @@ void PrintBufferPos(WAVFILE* wavFile)
 
 void AdvanceWindow(WAVFILE* wavFile, int ms)
 {	
-    int samples = wavFile->header.SampleRate * ((double)ms / 1000.0);
-    wavFile->window_pos = BufferAdvance(wavFile->window_pos, samples, WINDOW_SIZE);   
+    int bytes = (wavFile->header.SampleRate * ((double)ms / 1000.0)) * (wavFile->header.BitsPerSample / 8.0);
+    wavFile->window_pos = BufferAdvance(wavFile->window_pos, bytes, WINDOW_SIZE);   
 
-	wavFile->totalBytesPlayed += samples;
+	wavFile->totalBytesPlayed += bytes;
 
 	if (wavFile->totalBytesPlayed > wavFile->totalBytesRead)
 	{

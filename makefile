@@ -1,6 +1,6 @@
 # Thanks: http://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
 
-CC=gcc
+#CC=clang
 CFLAGS= -g -ansi -pedantic -Wall -std=c99 -I$(IDIR) -I/usr/include/SDL
 IDIR=include
 ODIR=obj
@@ -22,9 +22,10 @@ $(ODIR)/%.o: $(SDIR)/%.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)	
     
 piano-fft: $(OBJ)
-	gcc -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
     
 all: style piano-fft
+
 
 .PHONY: clean
 
