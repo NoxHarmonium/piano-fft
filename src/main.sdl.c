@@ -78,11 +78,6 @@ void HeartBeat()
     int i;
     int ms = (int) SDL_GetTicks() - lastFFTTime;
 
-    if (ms < 33)
-    {
-        return;
-    }
-
     lastFFTTime = SDL_GetTicks();
 
     if (fftResult.bins != NULL)
@@ -92,7 +87,8 @@ void HeartBeat()
     }
 
     samplesRead = 0;
-    kiss_fft_cpx* in = LoadSamples(&audioFile, ms, &samplesRead, 16384);
+
+    kiss_fft_cpx* in = LoadSamples(&audioFile, ms, &samplesRead, WINDOW_SIZE);
     totalSamplesRead += samplesRead;
     iterations++;
 

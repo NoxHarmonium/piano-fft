@@ -127,13 +127,11 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
     int bytesRead = 0;
     int _samplesRead = 0;
     int maxValue = 0;
-    int samples = wavFile->header.SampleRate * ((double)millis / 1000.0);
+    int samples = (int)ceil(wavFile->header.SampleRate * (millis / 1000.0));
     int kissSamples = kiss_fft_next_fast_size(windowSize);
     int bytesPerSample = wavFile->header.BitsPerSample / 8;
     unsigned char* buffer_pos;
     kiss_fft_cpx empty;
-
-    wavFile->buffer += samples * bytesPerSample;
 
     values = malloc(kissSamples * sizeof(kiss_fft_cpx));
 
@@ -156,15 +154,17 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
 
     while (i < kissSamples)
     {
-        kiss_fft_cpx s;
-        int j;
+    
+		
+		kiss_fft_cpx s;
+        int j = 0;
         int sample = 0;
         unsigned char* converter = calloc(sizeof(int), 1);
 
 		if (i+j > wavFile->header.Subchunk2Size)
 		{
 			/* TODO: Maybe loop around rather than just exiting when stream is finished. */
-			printf("End of stream reached.\n");
+			printf("End of stream reached. (%i>%i)\n", i+j, wavFile->header.Subchunk2Size);
 			exit(EXIT_FAILURE);
 		}
 
