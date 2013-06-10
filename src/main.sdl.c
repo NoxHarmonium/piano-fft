@@ -149,7 +149,8 @@ int main(int argc, char *argv[])
 	atexit(SDL_Quit); /* Call SDL_QUIT when program exits normally */
 
 	setupScreen();
-	
+	/* TODO: Basic argument sanity checking */
+	setupAudio(argv[1]);
 
 	while (running) {
         SDL_WaitEvent(&event);
