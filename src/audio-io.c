@@ -166,7 +166,7 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
     int kissSamples = kiss_fft_next_fast_size(windowSize);
     int bytesPerSample = wavFile->header.BitsPerSample / 8;
     unsigned char* buffer_pos;
-    kiss_fft_cpx empty;
+    kiss_fft_cpx empty = {0,0};
 
     values = malloc(kissSamples * sizeof(kiss_fft_cpx));
 
@@ -190,7 +190,7 @@ kiss_fft_cpx* LoadSamples(WAVFILE* wavFile, int millis, int* samplesRead, int wi
 
     buffer_pos = wavFile->buffer + wavFile->window_pos;
 
-    while (_samplesRead < kissSamples)
+    while (_samplesRead < windowSize)
     {		
 		kiss_fft_cpx s;
         int j = 0;
