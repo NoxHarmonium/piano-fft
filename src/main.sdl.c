@@ -95,7 +95,8 @@ void HeartBeat()
 
     totalSamplesRead += samplesRead;
     iterations++;
-
+    
+    ApplyWindowing(in, samplesRead);
     kiss_fft_cpx* result = malloc(samplesRead * sizeof(kiss_fft_cpx));
     fftResult = PerformFFT(in, result, samplesRead);
     fftResult.wavFile = &audioFile;

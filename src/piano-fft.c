@@ -8,6 +8,7 @@
 #include "audio-io.h"
 #include "piano-fft.h"
 #include "utils.h"
+#include "window-funcs.h"
 
 /* 
     Piano Key Frequency Table
@@ -98,11 +99,23 @@ FFT_BRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
     return createBrush((int)floor(r * 254),(int)floor(g * 254),(int)floor(b * 254));
 }
 
+void ApplyWindowing(kiss_fft_cpx* samples, int samplesRead)
+{
+    int i;
+    
+    for (i = 0; i < samplesRead; i++)
+    {
+        float mult = WF_Hanning(i, samplesRead);
+        samples[i] *= mult;
+    }
+
+
+}
 
 FFT_RESULT PerformFFT(kiss_fft_cpx* in, kiss_fft_cpx* out, int samplesRead)
 {
-    kiss_fft_cfg cfg;
-
+    kiss_fft_cfg cfg;    
+    
     if (samplesRead > 0)
     {
         /* printf("Samples Read: %i \n", samplesRead);  */

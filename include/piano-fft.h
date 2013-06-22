@@ -35,5 +35,6 @@ FFT_RECT getKeyboardRect();
 FFT_RECT getKeyRect(int keyIndex);
 FFT_BRUSH getKeyBrush(FFT_RESULT *result, int keyIndex);
 FFT_RESULT PerformFFT(kiss_fft_cpx *in, kiss_fft_cpx *out, int samplesRead);
+void ApplyWindowing(kiss_fft_cpx* samples, int samplesRead);
 
 #endif
