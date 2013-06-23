@@ -16,4 +16,5 @@
 #define CHUNK_SIZE 17000 
 #define HEADER_LENGTH 44
 #define MAX_POS (BUFFER_LENGTH - WINDOW_SIZE)
+#define WINDOW_FUNC WF_Rectagle
 
