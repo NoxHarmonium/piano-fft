@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "window-funcs.h"
 
-/* 
+/*
     Piano Key Frequency Table
     A list of all the frequencies of the white notes on a piano.
 */
@@ -56,11 +56,11 @@ FFT_RECT getKeyRect(int keyIndex)
 
 FFT_BRUSH createBrush(int r, int g, int b)
 {
-	FFT_BRUSH brush;
-	brush.r = r;
-	brush.g = g;
-	brush.b = b;
-	return brush;
+    FFT_BRUSH brush;
+    brush.r = r;
+    brush.g = g;
+    brush.b = b;
+    return brush;
 }
 
 FFT_BRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
@@ -68,7 +68,7 @@ FFT_BRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
     float r = 0;
     float g = 0;
     float b = 0;
-	
+
     if (result->wavFile == NULL)
     {
         return createBrush((int)r, (int)g, (int)b);
@@ -95,14 +95,14 @@ FFT_BRUSH getKeyBrush(FFT_RESULT* result, int keyIndex)
     h = magnitudes[keyIndex] / ((kiss_fft_scalar)samples / 2) * 360;
     magnitudes[keyIndex] *= 0.90;
     HSVtoRGB( &r, &g, &b, h, s, v );
-	
-    return createBrush((int)floor(r * 254),(int)floor(g * 254),(int)floor(b * 254));
+
+    return createBrush((int)floor(r * 254), (int)floor(g * 254), (int)floor(b * 254));
 }
 
 void ApplyWindowing(kiss_fft_cpx* samples, int samplesRead)
 {
     int i;
-    
+
     for (i = 0; i < samplesRead; i++)
     {
         float mult = WF_Hanning(i, samplesRead);
@@ -114,8 +114,8 @@ void ApplyWindowing(kiss_fft_cpx* samples, int samplesRead)
 
 FFT_RESULT PerformFFT(kiss_fft_cpx* in, kiss_fft_cpx* out, int samplesRead)
 {
-    kiss_fft_cfg cfg;    
-    
+    kiss_fft_cfg cfg;
+
     if (samplesRead > 0)
     {
         /* printf("Samples Read: %i \n", samplesRead);  */
