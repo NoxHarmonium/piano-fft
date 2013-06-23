@@ -14,7 +14,7 @@ float WF_Hanning(int sample, int totalSamples)
     return 0.5 *
            (1 - cos(
                 (2.0 * pi * sample) /
-                sample
+                totalSamples
             )
            );
 }
