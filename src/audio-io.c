@@ -149,7 +149,9 @@ void PrintBufferPos(WAVFILE* wavFile)
 
 void AdvanceWindow(WAVFILE* wavFile, int ms)
 {
-    int bytes = (wavFile->header.SampleRate * ((double)ms / 1000.0)) * (wavFile->header.BitsPerSample / 8.0);
+    int bytesPerSample = (wavFile->header.BitsPerSample / 8);
+    int bytes = (wavFile->header.SampleRate * ((double)ms / 1000.0)) * bytesPerSample;
+    bytes += bytes % bytesPerSample; /* Make sure that the window is alligned to a sample */
     wavFile->window_pos = BufferAdvance(wavFile->window_pos, bytes, WINDOW_SIZE);
 
     wavFile->totalBytesPlayed += bytes;
