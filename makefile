@@ -12,10 +12,10 @@ MAINFILE=main.sdl.o
 LIBS=-lSDLmain -lSDL -lm
 SDL_LIBS=`sdl-config --libs`
 
-_DEPS = _kiss_fft_guts.h  audio-io.h  dd.h  piano-fft.h  kiss_fft.h  utils.h config.h window-funcs.h 
+_DEPS = _kiss_fft_guts.h  audio-io.h  piano-fft.h  kiss_fft.h  utils.h config.h window-funcs.h 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = audio-io.o  kiss_fft.o  piano-fft.o utils.o window-funcs.o  $(MAINFILE) 
+_OBJ = audio-io.o  kiss_fft.o  piano-fft.o utils.o window-funcs.o $(MAINFILE) 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: $(SDIR)/%.c $(DEPS)
