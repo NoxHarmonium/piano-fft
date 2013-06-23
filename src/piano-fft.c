@@ -106,7 +106,7 @@ void ApplyWindowing(kiss_fft_cpx* samples, int samplesRead)
     for (i = 0; i < samplesRead; i++)
     {
         float mult = WF_Hanning(i, samplesRead);
-        samples[i] *= mult;
+        samples[i].r *= mult;
     }
 
 
